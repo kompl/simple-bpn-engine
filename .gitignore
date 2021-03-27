@@ -1,0 +1,9 @@
+.env
+.idea
+env/
+venv/
+__pycache__/
+*.log
+debug_tools.py
+*.pot
+*.pyc\

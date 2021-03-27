@@ -1,0 +1,111 @@
+from fastapi_simple_crud_operations.database_management_utils import alias_generator, get_expression
+
+
+class DoesNotExist(Exception):
+    pass
+
+
+async def read(conn, model):
+    fields_list = [field for field in dir(model) if not field.startswith('_') and field != 'metadata']
+    fields = ', '.join([field for field in fields_list])
+    records = await conn.fetch(
+        f'''SELECT {fields} FROM {model.__tablename__}'''
+    )
+    return [model.__class__(**dict(record)) for record in records]
+
+
+async def read_by_params(conn, model, **filters):
+    alias_gen = alias_generator()
+    init_data = model.dict()
+    fields = list(init_data.keys())
+    values = list(filters.values())
+    filters_string = ' AND '.join([get_expression(field__exp_key.partition('__')[2],
+                                                  field__exp_key.partition('__')[0],
+                                                  next(alias_gen))
+                                   for field__exp_key, value in filters.items()])
+    fields_string = ', '.join([field for field in fields])
+    data = await conn.fetch(f'''SELECT {fields_string} FROM {model.Meta.table} WHERE {filters_string}''', *values)
+    if data:
+        return [model.construct(**dict(row)) for row in data]
+    else:
+        raise DoesNotExist
+
+
+async def create(conn, model):
+    init_data = model.dict()
+    if not init_data[model.Meta.pk]:
+        init_data.pop(model.Meta.pk)
+    fields_list = list(init_data.keys())
+    values = list(init_data.values())
+    # fields_list = [field for field in model.dict()]
+    fields = ', '.join([field for field in fields_list])
+    # values = [getattr(model, field) for field in fields_list]
+    aliases = ', '.join([f"${num + 1}" for num in range(len(values))])
+    data = await conn.fetchrow(
+        f'''INSERT INTO {model.Meta.table} ({fields}) VALUES ({aliases}) RETURNING {fields}''', *values
+    )
+    if data:
+        return model.construct(**dict(data))
+    else:
+        raise DoesNotExist
+
+
+async def bulk_create(conn, models):
+    alias_gen = alias_generator()
+    fields_list = [field for field in dir(models[0]) if not field.startswith('_') and field != 'metadata']
+    variables = [getattr(model, field) for model in models for field in fields_list]
+    aliases = [[next(alias_gen) for i in range(len(fields_list))] for rows in range(len(models))]
+    fields = ', '.join([field for field in fields_list])
+    aliases_string = '(' + '), ('.join([', '.join(aliases_row) for aliases_row in aliases]) + ')'
+    data = await conn.fetch(
+        f'''INSERT INTO {models[0].__tablename__} ({fields}) VALUES {aliases_string} RETURNING {fields}''', *variables
+    )
+    if data:
+        return [models[0].__class__(**dict(row)) for row in data]
+    else:
+        raise DoesNotExist
+
+
+async def update_by_params_with_extra_fields(conn, model, *excluded, **filters):
+    alias_gen = alias_generator()
+    fields = [field for field in dir(model)
+              if not field.startswith('_') and field != 'metadata' and field not in excluded]
+    set_list = ', '.join([f'{field} = {next(alias_gen)}' for field in fields])
+    fields_string = ', '.join([field for field in fields + list(excluded)])
+    filters_string = ' AND '.join([get_expression(field__exp_key.partition('__')[2],
+                                                  field__exp_key.partition('__')[0],
+                                                  next(alias_gen))
+                                   for field__exp_key, value in filters.items()])
+    values = [getattr(model, field) for field in fields] + [value for value in filters.values()]
+    data = await conn.fetchrow(
+        f'''UPDATE {model.__tablename__} SET {set_list} WHERE {filters_string} RETURNING {fields_string}''', *values
+    )
+    if data:
+        return model.__class__(**dict(data))
+    else:
+        raise DoesNotExist
+
+
+async def delete_by_params(conn, model, **filters):
+    alias_gen = alias_generator()
+    fields = [field for field in dir(model) if not field.startswith('_') and field != 'metadata']
+    fields_string = ', '.join([field for field in fields])
+    filters_string = ' AND '.join([get_expression(field__exp_key.partition('__')[2],
+                                                  field__exp_key.partition('__')[0],
+                                                  next(alias_gen))
+                                   for field__exp_key, value in filters.items()])
+    values = [value for value in filters.values()]
+    data = await conn.fetch(
+        f'''DELETE FROM {model.__tablename__} WHERE {filters_string} RETURNING {fields_string}''', *values
+    )
+    if data:
+        return [model.__class__(**dict(row)) for row in data]
+    else:
+        return []
+
+
+async def update_method_last_call(conn, method_uid, time_stamp):
+    await conn.fetch(
+        f'''UPDATE cronjob_method_config SET last_call = $2 
+            WHERE method_uid = $1''', method_uid, time_stamp
+    )
