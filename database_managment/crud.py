@@ -1,4 +1,4 @@
-from database_utils.database_management_utils import alias_generator, get_expression
+from database_managment.utils import alias_generator, get_expression
 
 
 class DoesNotExist(Exception):

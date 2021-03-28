@@ -1,5 +1,5 @@
 from authorization.application_layer.interfaces import UserIn, TokenOut
-from database_utils.crud import create, read_by_params
+from database_managment.crud import create, read_by_params
 from datetime import timedelta
 from authorization.application_layer.services.interfaces_factories import UserInterfacesFactory
 from authorization.infrastructure_layer.utils import get_timestamp
