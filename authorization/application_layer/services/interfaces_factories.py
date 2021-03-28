@@ -1,5 +1,5 @@
 from authorization.application_layer.interfaces import UserIn, UserOut, TokenOut
-from authorization.domain.models import UserDB
+from authorization.domain.users_models import UserDB
 
 
 class UserInterfacesFactory:

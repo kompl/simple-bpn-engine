@@ -4,13 +4,13 @@ from authorization.application_layer.services.auth_services import AuthService
 from server_configs.setup import db_pool
 from fastapi.security import OAuth2PasswordRequestForm
 
-
 auth_router = APIRouter(
     prefix="/api/auth",
     tags=["Auth"],
     responses={404: {"description": "Not found"},
                204: {"description": "Does not exists"}},
 )
+
 
 async def build_auth_service():
     pool = await db_pool
@@ -25,10 +25,7 @@ async def build_auth_service():
     response_model=UserOut,
     status_code=201
 )
-async def create_user(user_in: UserIn):
-    pool = await db_pool
-    service = AuthService()
-    service.setup(pool)
+async def create_user(user_in: UserIn, service: AuthService = Depends(build_auth_service)):
     return await service.create_user(user_in)
 
 
@@ -38,10 +35,8 @@ async def create_user(user_in: UserIn):
     response_model=TokenOut,
     status_code=201
 )
-async def get_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    pool = await db_pool
-    service = AuthService()
-    service.setup(pool)
+async def get_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
+                           service: AuthService = Depends(build_auth_service)):
     return await service.create_access_token(form_data)
 
 

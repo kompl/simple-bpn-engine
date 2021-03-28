@@ -1,4 +1,4 @@
-from fastapi_simple_crud_operations.database_management_utils import alias_generator, get_expression
+from database_utils.database_management_utils import alias_generator, get_expression
 
 
 class DoesNotExist(Exception):
@@ -24,7 +24,7 @@ async def read_by_params(conn, model, **filters):
                                                   next(alias_gen))
                                    for field__exp_key, value in filters.items()])
     fields_string = ', '.join([field for field in fields])
-    data = await conn.fetch(f'''SELECT {fields_string} FROM {model.Meta.table} WHERE {filters_string}''', *values)
+    data = await conn.fetch(f'''SELECT {fields_string} FROM {model.__table__} WHERE {filters_string}''', *values)
     if data:
         return [model.construct(**dict(row)) for row in data]
     else:
@@ -33,16 +33,14 @@ async def read_by_params(conn, model, **filters):
 
 async def create(conn, model):
     init_data = model.dict()
-    if not init_data[model.Meta.pk]:
-        init_data.pop(model.Meta.pk)
-    fields_list = list(init_data.keys())
+    returning_fields = ', '.join(list(init_data.keys()))
+    if not getattr(model, model.__pk__):
+        init_data.pop(model.__pk__)
     values = list(init_data.values())
-    # fields_list = [field for field in model.dict()]
-    fields = ', '.join([field for field in fields_list])
-    # values = [getattr(model, field) for field in fields_list]
+    fields_string = ', '.join(list(init_data.keys()))
     aliases = ', '.join([f"${num + 1}" for num in range(len(values))])
     data = await conn.fetchrow(
-        f'''INSERT INTO {model.Meta.table} ({fields}) VALUES ({aliases}) RETURNING {fields}''', *values
+        f'''INSERT INTO {model.__table__} ({fields_string}) VALUES ({aliases}) RETURNING {returning_fields}''', *values
     )
     if data:
         return model.construct(**dict(data))
