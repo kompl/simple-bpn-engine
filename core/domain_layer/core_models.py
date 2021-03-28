@@ -10,7 +10,7 @@ class BoardDB(BaseDBModel):
     uuid: uuid_lib.UUID
     name: str
     description: str
-    status_id: int
+    user_uid: uuid_lib
 
 
 class MethodDB(BaseDBModel):
@@ -20,7 +20,7 @@ class MethodDB(BaseDBModel):
     uuid: uuid_lib.UUID
     name: str
     description: str
-    enabled: bool
+    disabled: bool
     status_id: int
     next_method_uuid: uuid_lib.UUID
     prev_method_uuid: uuid_lib.UUID
@@ -56,8 +56,8 @@ class PeriodicJobConfigDB(BaseDBModel):
 
 
 class HTTPMethodConfigDB(BaseDBModel):
-    __table__ = ''
-    __pk__ = ''
+    __table__ = 'http_method_config'
+    __pk__ = 'uuid'
 
     uuid: uuid_lib.UUID
     method_uuid: uuid_lib.UUID
@@ -69,8 +69,8 @@ class HTTPMethodConfigDB(BaseDBModel):
 
 
 class HTTPResponseDB(BaseDBModel):
-    __table__ = ''
-    __pk__ = ''
+    __table__ = 'http_responses'
+    __pk__ = 'uuid'
 
     uuid: uuid_lib.UUID
     status: int
