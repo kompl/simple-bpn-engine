@@ -5,13 +5,17 @@ class DoesNotExist(Exception):
     pass
 
 
-async def read(conn, model):
-    fields_list = [field for field in dir(model) if not field.startswith('_') and field != 'metadata']
-    fields = ', '.join([field for field in fields_list])
-    records = await conn.fetch(
-        f'''SELECT {fields} FROM {model.__tablename__}'''
+async def simple_read(conn, model):
+    init_data = model.dict()
+    fields = list(init_data.keys())
+    fields_string = ', '.join([field for field in fields])
+    data = await conn.fetch(
+        f'''SELECT {fields_string} FROM {model.__tablename__}'''
     )
-    return [model.__class__(**dict(record)) for record in records]
+    if data:
+        return [dict(zip(fields, row.values())) for row in data]
+    else:
+        raise DoesNotExist
 
 
 async def read_by_params(conn, model, **filters):
@@ -64,7 +68,7 @@ async def bulk_create(conn, models):
         raise DoesNotExist
 
 
-async def update_by_params_with_extra_fields(conn, model, *excluded, **filters):
+async def update_by_params(conn, model, *excluded, **filters):
     alias_gen = alias_generator()
     fields = [field for field in dir(model)
               if not field.startswith('_') and field != 'metadata' and field not in excluded]
@@ -100,10 +104,3 @@ async def delete_by_params(conn, model, **filters):
         return [model.__class__(**dict(row)) for row in data]
     else:
         return []
-
-
-async def update_method_last_call(conn, method_uid, time_stamp):
-    await conn.fetch(
-        f'''UPDATE cronjob_method_config SET last_call = $2 
-            WHERE method_uid = $1''', method_uid, time_stamp
-    )

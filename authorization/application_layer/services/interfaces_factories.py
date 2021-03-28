@@ -8,5 +8,5 @@ class UserInterfacesFactory:
         self.out_model = UserOut
         self.in_model = UserIn
 
-    def create_db_model(self, **extra_fields):
+    def create_db_model_object(self, **extra_fields):
         return self.db_model(**extra_fields)

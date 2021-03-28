@@ -27,9 +27,10 @@ class AuthService:
         self.conn = db_pool
 
     async def create_user(self, user_in: UserIn):
-        user_db = self._interface_fabric.create_db_model(user_name=user_in.user_name,
-                                                         hashed_password=self.get_password_hash(user_in.password),
-                                                         disabled=False)
+        user_db = self._interface_fabric.create_db_model_object(user_name=user_in.user_name,
+                                                                hashed_password=self.get_password_hash(
+                                                                    user_in.password),
+                                                                disabled=False)
         try:
             return await create(self.conn, user_db)
         except UniqueViolationError:
@@ -70,7 +71,7 @@ class AuthService:
         return current_user
 
     async def _get_user_by_username(self, username):
-        user_db_model = self._interface_fabric.create_db_model(user_name=username)
+        user_db_model = self._interface_fabric.create_db_model_object(user_name=username)
         found_users = await read_by_params(self.conn, user_db_model, user_name=user_db_model.user_name)
         return found_users[0]
 
