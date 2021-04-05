@@ -41,5 +41,5 @@ async def get_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
 
 
 @auth_router.get("/users/me/", response_model=UserOut)
-async def read_me(token: str = Depends(AuthService.oauth2_scheme), service: AuthService = Depends(build_auth_service)):
+async def get_user(token: str = Depends(AuthService.oauth2_scheme), service: AuthService = Depends(build_auth_service)):
     return await service.get_current_user(token)

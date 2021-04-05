@@ -1,16 +1,16 @@
-from database_managment.base_db_model import BaseDBModel
+from fastapi_async_db_utils.base_db_model import BaseDBModel
 import uuid as uuid_lib
 import datetime
+from typing import Optional
 
 
 class BoardDB(BaseDBModel):
     __table__ = 'boards'
     __pk__ = 'uuid'
 
-    uuid: uuid_lib.UUID
+    uuid: Optional[uuid_lib.UUID]
     name: str
     description: str
-    user_uid: uuid_lib
 
 
 class MethodDB(BaseDBModel):

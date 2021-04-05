@@ -1,4 +1,3 @@
-
 def get_expression(expression_key, field, alias):
     expressions = {
         '': f"{field} = {alias}",
@@ -66,7 +65,7 @@ def get_where(table_name, filter_group, variables_array, alias_gen):
         return ''
 
 
-def get_ordering_dict(fields, ordering_fields_mapper):
+def get_ordering_string(fields, ordering_fields_mapper):
     def get_index(field_string):
         if field_string.startswith('-'):
             return ' DESC', field_string[1:]
@@ -82,3 +81,19 @@ def get_ordering_dict(fields, ordering_fields_mapper):
 
 def get_offsets(page_size, page_number):
     return f' LIMIT {page_size} OFFSET {page_size * page_number - page_size}'
+
+
+class SelectParamsContainer:
+    def __init__(self, table_params, filters, **ordering):
+        self.ordering = ordering or {}
+        self.alias_generator = alias_generator()
+        self.variables = []
+        self.filters = filters
+
+        for table_name, id_field__filter_group in filters.items():
+            id_field, filter_group = id_field__filter_group
+            self.filters[table_name] = get_where(table_name, filter_group, self.variables, self.alias_generator)
+
+        self.order_by_list, self.page_size, self.page_number = table_params
+        self.pagination_string = get_offsets(self.page_size, self.page_number)
+        self.ordering_string = get_ordering_string(self.order_by_list, self.ordering)
