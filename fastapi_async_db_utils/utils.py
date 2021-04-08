@@ -12,22 +12,62 @@ def get_expression(expression_key, field, alias):
     return expressions[expression_key]
 
 
-def separate_data_for_dicts_consistently(data, full_fields_string, *models):
-    result = []
-    mapped_data = dict(zip(full_fields_string, data.values()))
-    for model in models:
-        initial_data = {key.split('.')[1]: value
-                        for key, value in mapped_data.items()
-                        if key.startswith(model.__tablename__)}
-        result.append(model.__class__(**initial_data))
-    return result
-
-
 def alias_generator():
     count = 0
     while True:
         count += 1
         yield f"${count}"
+
+
+class SelectParamsContainer:
+    def __init__(self, table_params, filters, **ordering):
+        self.alias_generator = alias_generator()
+        self.args = []
+        self.filters = filters
+
+        for table_name, id_field__filter_group in filters.items():
+            id_field, filter_group = id_field__filter_group
+            self.filters[table_name] = self._get_where_string(table_name, filter_group)
+
+        self.order_by_list, self.page_size, self.page_number = table_params
+        self.pagination_string = self._get_offset_string()
+        self.ordering_string = self._get_ordering_string(ordering)
+
+    def _get_where_string(self, table_name, filter_group):
+        query_string_parts = []
+        for field_with_method, value in filter_group.items():
+            if value:
+                field, _, method = field_with_method.rpartition('__')
+                self.args.append(self._update_arg(method, value))
+                query_string_parts.append(get_expression(method, f'{table_name}.{field}', next(self.alias_generator)))
+        if query_string_parts:
+            query_expressions_string = ' AND '.join(query_string_parts)
+            return f" WHERE {query_expressions_string}"
+        else:
+            return ''
+
+    @staticmethod
+    def _update_arg(method, value):
+        arg_patterns = {
+            'contains': f"%{value}%"
+        }
+        return arg_patterns.get(method, value)
+
+    def _get_offset_string(self):
+        return f' LIMIT {self.page_size} OFFSET {self.page_size * self.page_number - self.page_size}'
+
+    def _get_ordering_string(self, ordering_fields_mapper):
+        def get_index(field_string):
+            if field_string.startswith('-'):
+                return ' DESC', field_string[1:]
+            else:
+                return '', field_string
+
+        ordering_string = ' ORDER BY'
+        for field in self.order_by_list:
+            index, field = get_index(field)
+            ordering_string += f' {ordering_fields_mapper[field]}{index}'
+        return ordering_string
 
 
 def get_inner_join(table_name, id_field, filter_group, variables_array, alias_gen):
@@ -49,51 +89,3 @@ def get_inner_join(table_name, id_field, filter_group, variables_array, alias_ge
                 ON {table_name}_{id_field}.{id_field} = {table_name}.{id_field}"
     else:
         return ''
-
-
-def get_where(table_name, filter_group, variables_array, alias_gen):
-    query_string_parts = []
-    for field_with_method, value in filter_group.items():
-        if value:
-            field, _, method = field_with_method.rpartition('__')
-            variables_array.append(value)
-            query_string_parts.append(get_expression(method, f'{table_name}.{field}', next(alias_gen)))
-    if query_string_parts:
-        query_expressions_string = ' AND '.join(query_string_parts)
-        return f" WHERE {query_expressions_string}"
-    else:
-        return ''
-
-
-def get_ordering_string(fields, ordering_fields_mapper):
-    def get_index(field_string):
-        if field_string.startswith('-'):
-            return ' DESC', field_string[1:]
-        else:
-            return '', field_string
-
-    ordering_string = ' ORDER BY'
-    for field in fields:
-        index, field = get_index(field)
-        ordering_string += f' {ordering_fields_mapper[field]}{index}'
-    return ordering_string
-
-
-def get_offsets(page_size, page_number):
-    return f' LIMIT {page_size} OFFSET {page_size * page_number - page_size}'
-
-
-class SelectParamsContainer:
-    def __init__(self, table_params, filters, **ordering):
-        self.ordering = ordering or {}
-        self.alias_generator = alias_generator()
-        self.variables = []
-        self.filters = filters
-
-        for table_name, id_field__filter_group in filters.items():
-            id_field, filter_group = id_field__filter_group
-            self.filters[table_name] = get_where(table_name, filter_group, self.variables, self.alias_generator)
-
-        self.order_by_list, self.page_size, self.page_number = table_params
-        self.pagination_string = get_offsets(self.page_size, self.page_number)
-        self.ordering_string = get_ordering_string(self.order_by_list, self.ordering)

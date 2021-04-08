@@ -3,6 +3,7 @@ from uuid import UUID
 
 
 class BoardOut(CamelModel):
-    uuid: UUID
-    name: str
-    description: str
+    uuid: UUID = None
+    name: str = None
+    description: str = None
+    user_uid: UUID = None

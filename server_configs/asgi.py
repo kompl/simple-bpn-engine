@@ -5,13 +5,13 @@ from server_configs.exception_handlers import handle_exception, handle_does_not_
     DoesNotExistError, handle_unauthorized, handle_forbidden
 from authorization.infrastructure_layer.utils import UnauthorizedError, ForbiddenError
 from asyncpg.exceptions import ForeignKeyViolationError
-from core.application_layer.routing import boards_router
+from core.application_layer.boards_routing import boards_router
 
 
 app = FastAPI(
     debug=os.getenv('DEBUG', False),
-    title="WEBMASTERR 2077",
-    description="микросервис для управления адаптерами",
+    title="nio-tests",
+    description="mdd tool",
     version="0.0.1",
 )
 

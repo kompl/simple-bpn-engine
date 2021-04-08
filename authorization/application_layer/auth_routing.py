@@ -23,6 +23,7 @@ async def build_auth_service():
     "/registration",
     description='User Registration',
     response_model=UserOut,
+    response_model_exclude={'uid'},
     status_code=201
 )
 async def create_user(user_in: UserIn, service: AuthService = Depends(build_auth_service)):
@@ -40,6 +41,6 @@ async def get_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
     return await service.create_access_token(form_data)
 
 
-@auth_router.get("/users/me/", response_model=UserOut)
+@auth_router.get("/users/me/", response_model=UserOut, response_model_exclude={'uid'})
 async def get_user(token: str = Depends(AuthService.oauth2_scheme), service: AuthService = Depends(build_auth_service)):
     return await service.get_current_user(token)
