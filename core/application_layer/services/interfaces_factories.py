@@ -1,4 +1,4 @@
-from fastapi_async_db_utils import BaseInterfacesFactory
+from fastapi_async_db_utils import BaseInterfacesFactory, BaseDBModel
 from core.domain_layer.core_models import BoardDB
 from core.application_layer.output_models import BoardOut
 from core.application_layer.input_models import BoardIn
@@ -24,12 +24,18 @@ class BoardInterfacesFactory(BaseInterfacesFactory):
         })
 
     def create_output_model_object(self, raw_data, **extra_fields):
-        return self.output_model(**{
-            "uuid": raw_data["boards.uuid"],  # boards.uuid
-            "name": raw_data["boards.name"],  # boards.name
-            "description": raw_data["boards.description"],  # boards.description
-            "user_uid": raw_data["users.uid"]  # users.uid
-        })
+        if isinstance(raw_data, dict):
+            return self.output_model(**{
+                "uuid": raw_data["boards.uuid"],  # boards.uuid
+                "name": raw_data["boards.name"],  # boards.name
+                "description": raw_data["boards.description"]  # boards.description
+            })
+        elif isinstance(raw_data, BoardDB):
+            return self.output_model(**{
+                "uuid": raw_data.uuid,  # boards.uuid
+                "name": raw_data.name,  # boards.name
+                "description": raw_data.description  # boards.description
+            })
 
     def create_output_list_model_object(self, raw_data, *args, **extra_fields):
         return self.output_model(**{

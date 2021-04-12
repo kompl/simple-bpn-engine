@@ -16,8 +16,8 @@ boards_router = APIRouter(
 
 
 async def build_board_service():
-    pool = await db_pool
     service = BoardService()
+    pool = await db_pool
     service.setup(pool)
     return service
 
@@ -48,9 +48,8 @@ async def get_boards(user: UserOut = Depends(get_user),
 
 @boards_router.get(
     "/{board_uuid}",
-    description='Create New Board',
+    description='Get Board',
     response_model=BoardOut,
-    response_model_exclude={'user_uid'},
     status_code=200
 )
 async def create_board(user: UserOut = Depends(get_user),
@@ -60,14 +59,46 @@ async def create_board(user: UserOut = Depends(get_user),
     return await service.read_detail(board_uuid, user.uid)
 
 
-# @boards_router.post(
-#     "/",
-#     description='Create New Board',
-#     response_model=BoardOut,
-#     status_code=200
-# )
-# async def create_board(user: UserOut = Depends(get_user),
-#                        service: BoardService = Depends(build_board_service),
-#                        board_in: BoardIn = Body
-#                        ):
-#     return await service.create(board_in)
+@boards_router.post(
+    "/",
+    description='Create Board',
+    response_model=BoardOut,
+    status_code=201
+)
+async def create_board(board_in: BoardIn, user: UserOut = Depends(get_user)):
+    service = BoardService()
+    pool = await db_pool
+    async with pool.acquire() as connection:
+        async with connection.transaction():
+            service.setup(connection)
+            return await service.create_board(board_in, user)
+
+
+@boards_router.put(
+    "/{board_uuid}",
+    description='Update Board',
+    response_model=BoardOut,
+    status_code=201
+)
+async def update_board(board_in: BoardIn, user: UserOut = Depends(get_user), board_uuid: UUID = Path):
+    service = BoardService()
+    pool = await db_pool
+    async with pool.acquire() as connection:
+        async with connection.transaction():
+            service.setup(connection)
+            return await service.update_board(board_in, user.available_boards, board_uuid)
+
+
+@boards_router.delete(
+    "/{board_uuid}",
+    description='Update Board',
+    response_model=BoardOut,
+    status_code=201
+)
+async def delete_board(user: UserOut = Depends(get_user), board_uuid: UUID = Path):
+    service = BoardService()
+    pool = await db_pool
+    async with pool.acquire() as connection:
+        async with connection.transaction():
+            service.setup(connection)
+            return await service.delete_board(user.available_boards, board_uuid)

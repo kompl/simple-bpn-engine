@@ -19,7 +19,4 @@ async def select_board_list(conn, page_params, filters):
         "boards.name",
         "boards.description",
     )
-    if data:
-        return [dict(zip(fields, row.values())) for row in data if row.get("uuid")]
-    else:
-        return []
+    return [dict(zip(fields, row.values())) for row in data if row.get("uuid")]
