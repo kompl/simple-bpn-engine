@@ -1,4 +1,4 @@
-from fastapi_async_db_utils import SelectParamsContainer
+from fastapi_async_utils import SelectParamsContainer
 
 
 async def select_board_list(conn, page_params, filters):
@@ -19,7 +19,4 @@ async def select_board_list(conn, page_params, filters):
         "boards.name",
         "boards.description",
     )
-    if data:
-        return [dict(zip(fields, row.values())) for row in data if row.get("uuid")]
-    else:
-        return []
+    return [dict(zip(fields, row.values())) for row in data if row.get("uuid")]

@@ -1,15 +1,16 @@
 from authorization.application_layer.interfaces import UserIn, TokenOut
-from fastapi_async_db_utils import create, read_by_params
+from fastapi_async_utils import create
 from datetime import timedelta
 from authorization.application_layer.services.interfaces_factories import UserInterfacesFactory
 from authorization.infrastructure_layer.utils import get_timestamp
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from authorization.infrastructure_layer.exceptions import UnauthorizedError, ForbiddenError, DoesNotExistError
+from authorization.infrastructure_layer.exceptions import UnauthorizedError, ForbiddenError
 from fastapi import HTTPException
 from asyncpg.exceptions import UniqueViolationError
 from server_configs.setup import SECRET_KEY
+from authorization.infrastructure_layer.detail_selections import select_user
 
 
 class AuthService:
@@ -54,25 +55,30 @@ class AuthService:
             username: str = payload.get("sub")
             if username is None:
                 raise ForbiddenError
-            current_user = await self._get_user_by_username(username)
+            current_user, _ = await self._get_user_by_username(username)
             return current_user
         except JWTError:
             raise ForbiddenError
-        except DoesNotExistError:
-            raise ForbiddenError
 
     async def authenticate_user(self, username, password):
-        current_user = await self._get_user_by_username(username)
-        if not self.verify_password(password, current_user.hashed_password):
+        current_user, hashed_password = await self._get_user_by_username(username)
+        if not self.verify_password(password, hashed_password):
             raise UnauthorizedError
         if current_user.disabled:
             raise ForbiddenError
         return current_user
 
     async def _get_user_by_username(self, username):
-        user_db_model = self._interface_fabric.create_db_model_object(user_name=username)
-        found_users = await read_by_params(self.conn, user_db_model, user_name=user_db_model.user_name)
-        return found_users[0]
+        raw_data = await select_user(self.conn, username)
+        if raw_data:
+            return self._interface_fabric.create_output_model_object(
+                uid=raw_data[0]["users.uid"],
+                user_name=raw_data[0]["users.user_name"],
+                disabled=raw_data[0]["users.disabled"],
+                available_boards=[row["boards_users_relations.board_uuid"] for row in raw_data]
+            ), raw_data[0]["users.hashed_password"]
+        else:
+            raise ForbiddenError
 
     def get_password_hash(self, password):
         return self.pwd_context.hash(password)
