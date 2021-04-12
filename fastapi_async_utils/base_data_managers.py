@@ -1,5 +1,6 @@
 from .crud import create, delete_by_params, update_by_params
 from abc import ABC, abstractmethod
+from .base_interfaces_factories import BaseInterfacesFactory
 
 
 class CRUDService(ABC):
@@ -20,7 +21,7 @@ class CRUDService(ABC):
         return self.select_detail_coroutine
 
     def __init__(self):
-        self._interfaces_factory = self.interfaces_factory()
+        self._interfaces_factory: BaseInterfacesFactory = self.interfaces_factory()
         self.conn = None
 
     def setup(self, conn):
@@ -38,11 +39,11 @@ class CRUDService(ABC):
         db_model_object = self._interfaces_factory.create_db_model_object(input_model_object, **extra_fields)
         return await create(self.conn, db_model_object)
 
-    async def update(self, input_model_object, filters: dict = None, excluded: tuple = tuple(), **extra_fields):
+    async def update(self, input_model_object, filters: dict = None, excluded: set = frozenset(), **extra_fields):
         filters = filters or {}
         db_model_object = self._interfaces_factory.create_db_model_object(input_model_object, **extra_fields)
         return await update_by_params(self.conn, db_model_object, *excluded, **filters)
 
     async def delete(self, **filters):
-        db_model_object = self._interfaces_factory.db_model()
+        db_model_object = self._interfaces_factory.db_model.construct()
         return await delete_by_params(self.conn, db_model_object, **filters)
