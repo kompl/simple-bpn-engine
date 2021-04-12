@@ -1,4 +1,4 @@
-from fastapi_async_db_utils.base_db_model import BaseDBModel
+from fastapi_async_utils import BaseDBModel
 import uuid as uuid_lib
 import datetime
 from typing import Optional

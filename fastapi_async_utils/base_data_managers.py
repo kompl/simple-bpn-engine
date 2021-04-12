@@ -1,6 +1,6 @@
-from fastapi_async_db_utils.crud import create, delete_by_params, update_by_params
+from .crud import create, delete_by_params, update_by_params
 from abc import ABC, abstractmethod
-from core.infrastructure_layer.list_selections import select_board_list
+from .base_interfaces_factories import BaseInterfacesFactory
 
 
 class CRUDService(ABC):
@@ -21,7 +21,7 @@ class CRUDService(ABC):
         return self.select_detail_coroutine
 
     def __init__(self):
-        self._interfaces_factory = self.interfaces_factory()
+        self._interfaces_factory: BaseInterfacesFactory = self.interfaces_factory()
         self.conn = None
 
     def setup(self, conn):
@@ -31,19 +31,19 @@ class CRUDService(ABC):
         db_raw_data = await self.select_list_coroutine.__func__(self.conn, table_params, filters)
         return [self._interfaces_factory.create_output_list_model_object(row) for row in db_raw_data]
 
-    async def read_detail(self, primary_key):
-        db_raw_data = await self.select_detail_coroutine.__func__(self.conn, primary_key)
+    async def read_detail(self, primary_key, *args):
+        db_raw_data = await self.select_detail_coroutine.__func__(self.conn, primary_key, *args)
         return self._interfaces_factory.create_output_model_object(db_raw_data)
 
     async def create(self, input_model_object, **extra_fields):
         db_model_object = self._interfaces_factory.create_db_model_object(input_model_object, **extra_fields)
         return await create(self.conn, db_model_object)
 
-    async def update(self, input_model_object, filters: dict = None, excluded: tuple = tuple(), **extra_fields):
+    async def update(self, input_model_object, filters: dict = None, excluded: set = frozenset(), **extra_fields):
         filters = filters or {}
         db_model_object = self._interfaces_factory.create_db_model_object(input_model_object, **extra_fields)
         return await update_by_params(self.conn, db_model_object, *excluded, **filters)
 
     async def delete(self, **filters):
-        db_model_object = self._interfaces_factory.db_model()
+        db_model_object = self._interfaces_factory.db_model.construct()
         return await delete_by_params(self.conn, db_model_object, **filters)

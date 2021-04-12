@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import Optional
-from fastapi_async_db_utils.base_db_model import BaseDBModel
+from fastapi_async_utils import BaseDBModel
 
 
 class UserDB(BaseDBModel):
@@ -11,4 +11,3 @@ class UserDB(BaseDBModel):
     user_name: str
     disabled: Optional[bool]
     hashed_password: Optional[str]
-

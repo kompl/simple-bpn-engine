@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from authorization.application_layer.auth_routing import auth_router
 from server_configs.exception_handlers import handle_exception, handle_does_not_exist_exception, handle_is_dependence, \
     DoesNotExistError, handle_unauthorized, handle_forbidden
-from authorization.infrastructure_layer.utils import UnauthorizedError, ForbiddenError
+from authorization.infrastructure_layer.exceptions import UnauthorizedError, ForbiddenError
 from asyncpg.exceptions import ForeignKeyViolationError
 from core.application_layer.boards_routing import boards_router
 
