@@ -1,4 +1,4 @@
-from fastapi_async_db_utils.base_interfaces_factories import BaseInterfacesFactory
+from fastapi_async_db_utils import BaseInterfacesFactory
 from core.domain_layer.core_models import BoardDB
 from core.application_layer.output_models import BoardOut
 from core.application_layer.input_models import BoardIn

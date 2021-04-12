@@ -1,19 +1,18 @@
 from authorization.application_layer.interfaces import UserIn, TokenOut
-from fastapi_async_db_utils.crud import create, read_by_params
+from fastapi_async_db_utils import create, read_by_params
 from datetime import timedelta
 from authorization.application_layer.services.interfaces_factories import UserInterfacesFactory
 from authorization.infrastructure_layer.utils import get_timestamp
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from authorization.infrastructure_layer.utils import UnauthorizedError, ForbiddenError, DoesNotExistError
+from authorization.infrastructure_layer.exceptions import UnauthorizedError, ForbiddenError, DoesNotExistError
 from fastapi import HTTPException
 from asyncpg.exceptions import UniqueViolationError
 from server_configs.setup import SECRET_KEY
 
 
 class AuthService:
-    SECRET_KEY = "8c3cbce150fb1b38a8b16b941d53f7f2eef6aa8c96096548a5de797a650f4b24"
     ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = 300
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")

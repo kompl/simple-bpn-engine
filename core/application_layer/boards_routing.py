@@ -57,7 +57,7 @@ async def create_board(user: UserOut = Depends(get_user),
                        service: BoardService = Depends(build_board_service),
                        board_uuid: UUID = Path
                        ):
-    return await service.read_detail(board_uuid, user_uuid)
+    return await service.read_detail(board_uuid, user.uid)
 
 
 # @boards_router.post(

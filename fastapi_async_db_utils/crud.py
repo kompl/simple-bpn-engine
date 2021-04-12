@@ -1,21 +1,8 @@
-from fastapi_async_db_utils.utils import alias_generator, get_expression
+from .utils import alias_generator, get_expression
 
 
 class DoesNotExist(Exception):
     pass
-
-
-async def simple_read(conn, model):
-    init_data = model.dict()
-    fields = list(init_data.keys())
-    fields_string = ', '.join([field for field in fields])
-    data = await conn.fetch(
-        f'''SELECT {fields_string} FROM {model.__tablename__}'''
-    )
-    if data:
-        return [dict(zip(fields, row.values())) for row in data]
-    else:
-        raise DoesNotExist
 
 
 async def read_by_params(conn, model, **filters):
