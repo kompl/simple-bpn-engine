@@ -1,6 +1,6 @@
 from uuid import UUID
 from typing import Optional
-from fastapi_async_db_utils import BaseDBModel
+from fastapi_async_utils import BaseDBModel
 
 
 class UserDB(BaseDBModel):

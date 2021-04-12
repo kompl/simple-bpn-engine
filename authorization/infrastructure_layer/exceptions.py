@@ -4,7 +4,3 @@ class UnauthorizedError(Exception):
 
 class ForbiddenError(Exception):
     pass
-
-
-class DoesNotExistError(Exception):
-    pass

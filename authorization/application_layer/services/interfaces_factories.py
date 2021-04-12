@@ -10,3 +10,6 @@ class UserInterfacesFactory:
 
     def create_db_model_object(self, **extra_fields):
         return self.db_model(**extra_fields)
+
+    def create_output_model_object(self, **extra_fields):
+        return self.out_model(**extra_fields)
