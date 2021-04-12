@@ -1,4 +1,4 @@
-from fastapi_async_db_utils import SelectParamsContainer
+from fastapi_async_utils import SelectParamsContainer
 
 
 async def select_board_list(conn, page_params, filters):

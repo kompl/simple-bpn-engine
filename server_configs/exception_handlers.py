@@ -22,10 +22,8 @@ async def handle_is_dependence(request: Request, call_next):
 
 
 async def handle_unauthorized(request: Request, call_next):
-    error_text = ' '.join([str(arg) for arg in call_next.args])
     return Response(status_code=401, content=json.dumps({'detail': 'incorrect credentials'}))
 
 
 async def handle_forbidden(request: Request, call_next):
-    error_text = ' '.join([str(arg) for arg in call_next.args])
-    return Response(status_code=403, content=json.dumps({'detail': 'account has been disabled'}))
+    return Response(status_code=403, content=json.dumps({'detail': 'unavailable'}))

@@ -1,4 +1,4 @@
-from fastapi_async_db_utils import CRUDService
+from fastapi_async_utils import CRUDService
 from core.infrastructure_layer.list_selections import select_board_list
 from core.infrastructure_layer.detail_selections import select_board
 from core.infrastructure_layer.custom_crud_utils import create_boards_user_relation
