@@ -26,4 +26,5 @@ async def handle_unauthorized(request: Request, call_next):
 
 
 async def handle_forbidden(request: Request, call_next):
-    return Response(status_code=403, content=json.dumps({'detail': 'unavailable'}))
+    error_text = ' '.join([str(arg) for arg in call_next.args])
+    return Response(status_code=403, content=json.dumps({'detail': error_text}))

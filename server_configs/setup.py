@@ -4,7 +4,6 @@ import asyncio
 import json
 import asyncpg
 from loguru import logger
-from fastapi.security import OAuth2PasswordBearer
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 

@@ -8,3 +8,5 @@ debug_tools.py
 *.pot
 *.pyc\
 generator/
+.pytest_cache
+.test.env

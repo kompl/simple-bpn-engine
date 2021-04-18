@@ -32,7 +32,11 @@ class AuthService:
                                                                     user_in.password),
                                                                 disabled=False)
         try:
-            return await create(self.conn, user_db)
+            created_user = await create(self.conn, user_db)
+            return self._interface_fabric.create_output_model_object(uid=created_user.uid,
+                                                                     user_name=created_user.user_name,
+                                                                     disabled=created_user.disabled,
+                                                                     available_boards=[])
         except UniqueViolationError:
             raise HTTPException(status_code=400, detail="this username already exist")
 
@@ -43,9 +47,10 @@ class AuthService:
         return TokenOut(**{"access_token": access_token, "token_type": "bearer"})
 
     def _create_access_token(self, user_db):
-        user_data = {"sub": user_db.user_name,
-                     "exp": get_timestamp() + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES)
-                     }
+        user_data = {
+            "sub": user_db.user_name,
+            "exp": get_timestamp() + timedelta(minutes=self.ACCESS_TOKEN_EXPIRE_MINUTES)
+        }
         encoded_jwt = jwt.encode(user_data, SECRET_KEY, algorithm=self.ALGORITHM)
         return encoded_jwt
 
@@ -53,19 +58,17 @@ class AuthService:
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[self.ALGORITHM])
             username: str = payload.get("sub")
-            if username is None:
-                raise ForbiddenError
             current_user, _ = await self._get_user_by_username(username)
             return current_user
         except JWTError:
-            raise ForbiddenError
+            raise ForbiddenError('incorrect bearer token')
 
     async def authenticate_user(self, username, password):
         current_user, hashed_password = await self._get_user_by_username(username)
         if not self.verify_password(password, hashed_password):
-            raise UnauthorizedError
+            raise UnauthorizedError('incorrect credentials')
         if current_user.disabled:
-            raise ForbiddenError
+            raise ForbiddenError('account disabled')
         return current_user
 
     async def _get_user_by_username(self, username):
@@ -75,10 +78,12 @@ class AuthService:
                 uid=raw_data[0]["users.uid"],
                 user_name=raw_data[0]["users.user_name"],
                 disabled=raw_data[0]["users.disabled"],
-                available_boards=[row["boards_users_relations.board_uuid"] for row in raw_data]
+                available_boards=[row["boards_users_relations.board_uuid"]
+                                  for row in raw_data
+                                  if row["boards_users_relations.board_uuid"]]
             ), raw_data[0]["users.hashed_password"]
         else:
-            raise ForbiddenError
+            raise UnauthorizedError('incorrect credentials')
 
     def get_password_hash(self, password):
         return self.pwd_context.hash(password)
