@@ -15,7 +15,7 @@ def event_loop():
     return running_loop
 
 
-@fixture(autouse=True)
+@fixture
 def postgresql_instance(postgresql_conn):
     backend = get_backend(DATABASE_URI)
     migrations = read_migrations('./migrations')

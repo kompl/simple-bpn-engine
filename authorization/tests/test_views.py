@@ -8,6 +8,7 @@ import os
 import datetime
 
 
+@mark.usefixtures('postgresql_instance')
 class BaseTestCaseAuthView:
     user_name = 'test'
     user_password = 'test'
