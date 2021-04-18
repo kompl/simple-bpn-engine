@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, Body, Path
+from fastapi import APIRouter, Depends, Query, Path
 from authorization.application_layer.auth_routing import get_user, UserOut
 from core.application_layer.services.managers import BoardService
 from server_configs.setup import db_pool
@@ -20,6 +20,15 @@ async def build_board_service():
     pool = await db_pool
     service.setup(pool)
     return service
+
+
+async def build_board_service_in_transaction_mode():
+    service = BoardService()
+    pool = await db_pool
+    async with pool.acquire() as connection:
+        async with connection.transaction():
+            service.setup(connection)
+            yield service
 
 
 # noinspection PyPep8Naming
@@ -65,13 +74,10 @@ async def create_board(user: UserOut = Depends(get_user),
     response_model=BoardOut,
     status_code=201
 )
-async def create_board(board_in: BoardIn, user: UserOut = Depends(get_user)):
-    service = BoardService()
-    pool = await db_pool
-    async with pool.acquire() as connection:
-        async with connection.transaction():
-            service.setup(connection)
-            return await service.create_board(board_in, user)
+async def create_board(board_in: BoardIn,
+                       service: BoardService = Depends(build_board_service_in_transaction_mode),
+                       user: UserOut = Depends(get_user)):
+    return await service.create_board(board_in, user)
 
 
 @boards_router.put(
@@ -80,13 +86,10 @@ async def create_board(board_in: BoardIn, user: UserOut = Depends(get_user)):
     response_model=BoardOut,
     status_code=201
 )
-async def update_board(board_in: BoardIn, user: UserOut = Depends(get_user), board_uuid: UUID = Path):
-    service = BoardService()
-    pool = await db_pool
-    async with pool.acquire() as connection:
-        async with connection.transaction():
-            service.setup(connection)
-            return await service.update_board(board_in, user.available_boards, board_uuid)
+async def update_board(board_in: BoardIn,
+                       service: BoardService = Depends(build_board_service_in_transaction_mode),
+                       user: UserOut = Depends(get_user), board_uuid: UUID = Path):
+    return await service.update_board(board_in, user.available_boards, board_uuid)
 
 
 @boards_router.delete(
@@ -95,10 +98,7 @@ async def update_board(board_in: BoardIn, user: UserOut = Depends(get_user), boa
     response_model=BoardOut,
     status_code=201
 )
-async def delete_board(user: UserOut = Depends(get_user), board_uuid: UUID = Path):
-    service = BoardService()
-    pool = await db_pool
-    async with pool.acquire() as connection:
-        async with connection.transaction():
-            service.setup(connection)
-            return await service.delete_board(user.available_boards, board_uuid)
+async def delete_board(user: UserOut = Depends(get_user),
+                       service: BoardService = Depends(build_board_service_in_transaction_mode),
+                       board_uuid: UUID = Path):
+    return await service.delete_board(user.available_boards, board_uuid)

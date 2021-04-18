@@ -1,7 +1,6 @@
 import datetime
 import os
-import pytz
-
+from zoneinfo import ZoneInfo
 
 def get_timestamp():
-    return datetime.datetime.now(tz=pytz.timezone(os.getenv('TZ')))
+    return datetime.datetime.now(tz=ZoneInfo(os.getenv('TZ')))

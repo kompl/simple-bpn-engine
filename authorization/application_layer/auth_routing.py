@@ -6,9 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 auth_router = APIRouter(
     prefix="/api/auth",
-    tags=["Auth"],
-    responses={404: {"description": "Not found"},
-               204: {"description": "Does not exists"}},
+    tags=["Auth"]
 )
 
 
